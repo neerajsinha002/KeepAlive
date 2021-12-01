@@ -1,0 +1,77 @@
+import pyautogui
+from tkinter import *
+import keyboard
+from docx import Document
+from docx.shared import Inches
+import datetime
+import win32gui
+import pygame
+import tkinter.messagebox
+import os
+import webbrowser
+import time
+
+Window = Tk()
+hotkey = 'ctrl+f2'
+
+Window.title('iSnap')
+pygame.init()
+
+lbl = Label(Window, text="Press {Ctrl-F2} to take snapshot", fg='red', font=("Helvetica", 10))
+lbl.place(x=16, y=5)
+
+wordDocCreate = Button(Window, text="CreateDoc", bg='green', fg='white', font=7)
+wordDocCreate.place(x=18, y=30)
+
+openFolderButton = Button(Window, text="OpenFolder", bg='blue', fg='white', font=7)
+openFolderButton.place(x=150, y=30)
+
+directory = 'C:/temp/snaps/'
+today = datetime.date.today()
+
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+def myScreenshot():
+    global today
+    hwnd = win32gui.GetForegroundWindow()
+    bbox = win32gui.GetWindowRect(hwnd)
+    print(Window.iconify())
+    time.sleep(.3)
+    snap = pyautogui.screenshot(region=[0, 0, 1920, 1080])
+    snap.save(
+        r'' + directory + 'Snap_' + str(today) + '_' + str(
+            datetime.datetime.now().strftime("%H.%M.%S.%f")[:-3]) + ".jpg")
+
+
+def createDoc():
+    global directory
+    docName = directory + 'Doc'
+    document = Document()
+    included_extensions = ['jpg', 'jpeg', 'bmp', 'png', 'gif']
+    file_names = [fn for fn in os.listdir(directory)
+                  if any(fn.endswith(ext) for ext in included_extensions)]
+    if len(file_names) > 0:
+        for file in file_names:
+            if file.__contains__(str(today)):
+                document.add_picture(directory + file, width=Inches(6.6))
+                print(directory + file)
+                os.remove(directory + file)
+        document.save(docName+'_'+str(today.strftime("%b"))+'-'+str(today.day)+'_'+datetime.datetime.now().strftime("%H.%M.%S")+'.docx')
+        tkinter.messagebox.showinfo("Info", 'Document Created!!! Check ' + directory + ' path')
+    else:
+        tkinter.messagebox.showinfo("Info", "No Image available to create doc file!!!")
+
+
+def openFolder():
+    global directory
+    webbrowser.open(directory)
+
+
+keyboard.add_hotkey(hotkey, myScreenshot)
+wordDocCreate['command'] = createDoc
+openFolderButton['command'] = openFolder
+
+Window.geometry("280x80+3+2")
+Window.resizable(0, 0)
+Window.mainloop()
